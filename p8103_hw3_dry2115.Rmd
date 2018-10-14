@@ -20,6 +20,7 @@ theme_set(theme_bw() + theme(legend.position = "bottom"))
 
 ## Problem 1
 
+Read and clean brfss_smart2010 data:
 
 ```{r}
 library(p8105.datasets)
@@ -27,12 +28,47 @@ library(p8105.datasets)
 brfss_df = as.tibble(
   brfss_smart2010 %>%
   janitor::clean_names() %>%
+  rename(state = locationabbr, county = locationdesc) %>%
   filter(topic == "Overall Health") %>%
   arrange(response)
 )
 
+```
+
+Find states that were observed at 7 locations:
+
+```{r}
+seven_locations = brfss_df %>%
+  filter(year == 2002) %>%
+  group_by(state) %>%
+  summarize(n_locations = n_distinct(county)) %>%
+  filter(n_locations == 7)
 
 ```
+Connecticut, Florida, and North Carolina were observed at 7 locations.
+
+
+Spaghetti plot that shows the number of locations at each state from 2002 to 2010:
+
+```{r}
+
+n_locations = (brfss_df %>%
+  filter(year %in% (2002:2010)) %>%
+  group_by(state, year) %>%
+  summarize(n_locations = n_distinct(county)))
+
+ggplot(n_locations, aes(x = year, y = n_locations)) +
+  geom_smooth(se = FALSE, aes(color = state)) +
+  theme(legend.position = "none") +
+  labs(
+    title = "Number of Distinct Locations by State in 2002-2010",
+    x = "Year",
+    y = "N distinct locations"
+  )
+  
+
+```
+
 
 
 
