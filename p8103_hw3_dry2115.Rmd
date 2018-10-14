@@ -22,6 +22,14 @@ theme_set(theme_bw() + theme(legend.position = "bottom"))
 
 
 ```{r}
+library(p8105.datasets)
+
+brfss_df = as.tibble(
+  brfss_smart2010 %>%
+  janitor::clean_names() %>%
+  filter(topic == "Overall Health") %>%
+  arrange(response)
+)
 
 
 ```
