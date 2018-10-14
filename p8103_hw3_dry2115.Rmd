@@ -30,6 +30,7 @@ brfss_df = as.tibble(
   janitor::clean_names() %>%
   rename(state = locationabbr, county = locationdesc) %>%
   filter(topic == "Overall Health") %>%
+  mutate(response = factor(response, levels = c("Excellent", "Very good", "Good", "Fair", "Poor"))) %>%
   arrange(response)
 )
 
@@ -38,13 +39,14 @@ brfss_df = as.tibble(
 Find states that were observed at 7 locations:
 
 ```{r}
-seven_locations = brfss_df %>%
+brfss_df %>%
   filter(year == 2002) %>%
   group_by(state) %>%
   summarize(n_locations = n_distinct(county)) %>%
-  filter(n_locations == 7)
-
+  filter(n_locations == 7) %>%
+  knitr::kable()
 ```
+
 Connecticut, Florida, and North Carolina were observed at 7 locations.
 
 
@@ -52,24 +54,48 @@ Spaghetti plot that shows the number of locations at each state from 2002 to 201
 
 ```{r}
 
-n_locations = (brfss_df %>%
+brfss_df %>%
   filter(year %in% (2002:2010)) %>%
   group_by(state, year) %>%
-  summarize(n_locations = n_distinct(county)))
+  summarize(n_locations = n_distinct(county)) %>%
 
-ggplot(n_locations, aes(x = year, y = n_locations)) +
-  geom_smooth(se = FALSE, aes(color = state)) +
-  theme(legend.position = "none") +
-  labs(
-    title = "Number of Distinct Locations by State in 2002-2010",
-    x = "Year",
-    y = "N distinct locations"
-  )
+  ggplot(aes(x = year, y = n_locations, color = state)) +
+    geom_smooth(se = FALSE) +
+    theme(legend.position = "none") +
+    labs(
+      title = "Number of Distinct Locations by State in 2002-2010",
+      x = "Year",
+      y = "N distinct locations"
+    )
   
+```
 
+Proportion of "Excellent" responses in NY locations in 2002, 2006, and 2010:
+
+```{r}
+
+brfss_df %>%
+    filter(state == "NY", response == "Excellent", year %in% c(2002, 2006, 2010)) %>%
+    group_by(year) %>%
+    summarize(mean_prop = mean(data_value), sd_prop = sd(data_value)) %>%
+    knitr::kable(digits = 1)
+
+                
 ```
 
 
+Compute average proportions in each response category for each state and year: 
+
+```{r}
+brfss_df %>%
+  group_by(response, year, state) %>%
+  summarize(mean_prop = mean(data_value)) %>%
+  
+  ggplot(aes(x = year, y = mean_prop, color = state)) +
+  geom_smooth(se = FALSE) + 
+  facet_grid(~response) +
+  theme(legend.position = "none")
+```
 
 
 ## Problem 2
