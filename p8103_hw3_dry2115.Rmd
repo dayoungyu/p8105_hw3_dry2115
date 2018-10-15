@@ -52,7 +52,7 @@ Connecticut, Florida, and North Carolina were observed at 7 locations.
 
 Spaghetti plot that shows the number of locations at each state from 2002 to 2010:
 
-```{r}
+```{r message = FALSE}
 
 brfss_df %>%
   filter(year %in% (2002:2010)) %>%
@@ -86,7 +86,7 @@ brfss_df %>%
 
 Compute average proportions in each response category for each state and year: 
 
-```{r}
+```{r message = FALSE, warning = FALSE}
 brfss_df %>%
   group_by(response, year, state) %>%
   summarize(mean_prop = mean(data_value)) %>%
@@ -94,13 +94,50 @@ brfss_df %>%
   ggplot(aes(x = year, y = mean_prop, color = state)) +
   geom_smooth(se = FALSE) + 
   facet_grid(~response) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  theme(axis.text.x = element_text(angle = 45)) +
+  labs(
+      x = "Year",
+      y = "Mean Proportion of Response"
+    )
+
 ```
 
 
 ## Problem 2
 
 ```{r}
+instacart_aisles = (instacart %>%
+  group_by(aisle) %>%
+  summarize(n_items = n()) %>%
+  arrange(desc(n_items)))
+
+```
+
+There are `r summarize(instacart, n_distinct(aisle_id))` distinct aisles.The top three aisles from which items are ordered are "fresh vegetables", "fresh fruits", and "packaged vegetables fruits".
+
+
+Plot of the number of items ordered in each aisle:
+```{r}
+instacart %>%
+  group_by(department) %>%
+  
+ggplot(aes(x = aisle)) +
+  geom_bar() + 
+  coord_flip() 
+
+```
+
+Table of most popular items in “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+```{r}
+instacart %>%
+  filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
+  group_by(aisle, product_name) %>%
+  summarize(n_items = n()) %>%
+  summarize(n_max = max(n_items))
+
+
+### How to join with item name
 
 
 ```
