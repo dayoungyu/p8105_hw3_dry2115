@@ -8,6 +8,8 @@ output: github_document
 
 ```{r setup, include=FALSE}
 library(tidyverse)
+library(hexbin)
+library(patchwork)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -92,7 +94,7 @@ brfss_df %>%
   summarize(mean_prop = mean(data_value)) %>%
   
   ggplot(aes(x = year, y = mean_prop, color = state)) +
-  geom_smooth(se = FALSE) + 
+  geom_point(se = FALSE) + 
   facet_grid(~response) +
   theme(legend.position = "none") +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -107,10 +109,11 @@ brfss_df %>%
 ## Problem 2
 
 ```{r}
-instacart_aisles = (instacart %>%
+instacart %>%
   group_by(aisle) %>%
   summarize(n_items = n()) %>%
-  arrange(desc(n_items)))
+  arrange(desc(n_items)) %>%
+  top_n(3)
 
 ```
 
@@ -119,16 +122,25 @@ There are `r summarize(instacart, n_distinct(aisle_id))` distinct aisles.The top
 
 Plot of the number of items ordered in each aisle:
 ```{r}
-instacart %>%
-  group_by(department) %>%
-  
-ggplot(aes(x = aisle)) +
+aisle_top = (instacart %>%
+  head(67) %>%
+  ggplot(aes(x = aisle)) +
   geom_bar() + 
-  coord_flip() 
+  coord_flip() +
+  theme(text = element_text(size = 6)))
+
+aisle_bottom = (instacart %>%
+  tail(67) %>%
+  ggplot(aes(x = aisle)) +
+  geom_bar() + 
+  coord_flip() +
+  theme(text = element_text(size = 6)))
+
+aisle_top + aisle_bottom
 
 ```
 
-Table of most popular items in “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+Table of most popular items in “baking ingredients”, “dog food care”, and “packaged vegetables fruits”:
 ```{r}
 instacart %>%
   filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
@@ -172,7 +184,7 @@ Exploratory analysis of the NY NOAA data set:
 The ny_noaa contains core weather data (precipitation, snowfall, snowdepth, max temp, and min temp) for all weather stations in New York from `r min(ny_noaa$date)` to `r max(ny_noaa$date)`. There are `r count(ny_noaa)` observations in the ny_noaa data set. The data set contains a significant number of missing data.The proportion of missing data for the variables `r names(ny_noaa)` is `r sapply(ny_noaa, function(x) (sum(is.na(x))/count(ny_noaa)))`, respectively. We can see that almost 50% of tmax and tmin variables are missing.
 
 
-Clean NY NOAA
+Clean NY NOAA:
 
 ```{r}
 
@@ -201,6 +213,7 @@ ny_noaa_df %>%
   summarize(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
   ggplot(aes(x = year, y = mean_tmax)) +
   geom_point() +
+  geom_line() +
   facet_grid(~month, labeller = as_labeller(labels)) +
     labs(
       x = "Year",
@@ -213,5 +226,17 @@ Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a
 
 ```{r}
 
+tmax_tmin_plot = ny_noaa_df %>%
+  ggplot(aes(x = tmax, y = tmin)) +
+  geom_hex() 
+
+
+snow_plot = ny_noaa_df %>%
+  filter(snow > 0 & snow < 100) %>% 
+  group_by(year) %>%
+  ggplot(aes(x = snow, fill = year)) +
+  geom_density()
+
+(tmax_tmin_plot + snow_plot)
 ```
 
