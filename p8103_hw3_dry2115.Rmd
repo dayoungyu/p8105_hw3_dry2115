@@ -134,17 +134,19 @@ instacart %>%
   filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
   group_by(aisle, product_name) %>%
   summarize(n_items = n()) %>%
-  summarize(n_max = max(n_items))
-
-
-### How to join with item name
-
+  arrange(desc(n_items)) %>%
+  group_by(aisle) %>%
+  top_n(1) %>%
+  select(-n_items) %>%
+  rename(most_popular_item = product_name) %>%
+  knitr::kable()
+  
 
 ```
 
 
 Table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week:
-```{r}
+```{r warning = FALSE}
 instacart %>%
   filter(product_name == c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
   group_by(product_name, order_dow) %>%
@@ -156,8 +158,60 @@ instacart %>%
   rename(Sun = '0', Mon = '1', Tues = '2', Wed = '3', Thur = '4', Fri = '5', Sat = '6') %>%
   knitr::kable()
 
-
 ```
+
+Because no other information was given, it was assumed that "0" = Sunday, "1" = Monday, ..., "6" = Saturday.
+
 
 
 ## Problem 3
+
+Exploratory analysis of the NY NOAA data set:
+
+
+The ny_noaa contains core weather data (precipitation, snowfall, snowdepth, max temp, and min temp) for all weather stations in New York from `r min(ny_noaa$date)` to `r max(ny_noaa$date)`. There are `r count(ny_noaa)` observations in the ny_noaa data set. The data set contains a significant number of missing data.The proportion of missing data for the variables `r names(ny_noaa)` is `r sapply(ny_noaa, function(x) (sum(is.na(x))/count(ny_noaa)))`, respectively. We can see that almost 50% of tmax and tmin variables are missing.
+
+
+Clean NY NOAA
+
+```{r}
+
+ny_noaa_df = as.tibble(ny_noaa %>%
+  mutate(year = lubridate::year(date),
+         month = lubridate::month(date),
+         day = lubridate::day(date),
+         prcp = prcp/10,
+         tmax = (as.integer(tmax))/10,
+         tmin = (as.integer(tmin))/10) %>%
+  select(-date))
+
+```
+
+Precipitation was in (tenths of mm), so it was divided by 10 to make the units (mm). Tmax and tmin were coerced into integer variables and also divided by 10 to make the units (degrees C) instead of (tenths of degrees C).
+
+
+Two panel plot of average max temperatures in January and July:
+```{r}
+
+labels = c("1" = "January", "7" = "July")
+
+ny_noaa_df %>%
+  filter(month == c(1,7)) %>%
+  group_by(month, year) %>% 
+  summarize(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year, y = mean_tmax)) +
+  geom_point() +
+  facet_grid(~month, labeller = as_labeller(labels)) +
+    labs(
+      x = "Year",
+      y = "Mean maximum temperature (degrees C)"
+    )
+```
+
+
+Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year
+
+```{r}
+
+```
+
