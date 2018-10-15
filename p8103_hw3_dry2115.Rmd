@@ -62,7 +62,7 @@ brfss_df %>%
   summarize(n_locations = n_distinct(county)) %>%
 
   ggplot(aes(x = year, y = n_locations, color = state)) +
-    geom_smooth(se = FALSE) +
+    geom_smooth(se = FALSE, size = 0.5) +
     theme(legend.position = "none") +
     labs(
       title = "Number of Distinct Locations by State in 2002-2010",
@@ -71,6 +71,9 @@ brfss_df %>%
     )
   
 ```
+
+The spaghetti plot shows that most states were observed <= 10 locations from 2002 to 2010. The legend was not included in the output because many of the colors are indistinguishable and thus is not informative. More than giving information for each specific state, the plot relays information about the distribution of all states as a collective.
+
 
 Proportion of "Excellent" responses in NY locations in 2002, 2006, and 2010:
 
@@ -82,9 +85,9 @@ brfss_df %>%
     summarize(mean_prop = mean(data_value), sd_prop = sd(data_value)) %>%
     knitr::kable(digits = 1)
 
-                
 ```
 
+The mean proportion of excellent responses was highest in 2002, but the standard deviation was also the highest. The years 2006 and 2010 had similar proportions of excellent responses.
 
 Compute average proportions in each response category for each state and year: 
 
@@ -93,8 +96,8 @@ brfss_df %>%
   group_by(response, year, state) %>%
   summarize(mean_prop = mean(data_value)) %>%
   
-  ggplot(aes(x = year, y = mean_prop, color = state)) +
-  geom_point(se = FALSE) + 
+  ggplot(aes(x = year, y = mean_prop, group = year)) +
+  geom_boxplot() + 
   facet_grid(~response) +
   theme(legend.position = "none") +
   theme(axis.text.x = element_text(angle = 45)) +
@@ -105,13 +108,19 @@ brfss_df %>%
 
 ```
 
+Overall, the mean proportion was highest for the "Very good" response and lowest for the "Poor" response. Within each response category, the mean proportion did not differ significantly between years. The "Poor" response had the most outliers, and they were all upper extremes.
 
 ## Problem 2
 
+The instacart dataset contains `r count(instacart)` observations and `r ncol(instacart)` variables. The data represent descriptive data for the items bought through the app instacart. Key variables include product name, what department and aisle the product is in, the day of the week the item was bought, and if the item was a reorder. For example, "Bulgarian Yogurt" from the "yogurt" aisle in the "dairy eggs" was ordered on Thursday and was a reorder.
+
+
 ```{r}
-instacart %>%
+instacart_aisles = (instacart %>%
   group_by(aisle) %>%
-  summarize(n_items = n()) %>%
+  summarize(n_items = n()))
+
+instacart_aisles %>%
   arrange(desc(n_items)) %>%
   top_n(3)
 
@@ -122,26 +131,30 @@ There are `r summarize(instacart, n_distinct(aisle_id))` distinct aisles.The top
 
 Plot of the number of items ordered in each aisle:
 ```{r}
-aisle_top = (instacart %>%
-  head(67) %>%
-  ggplot(aes(x = aisle)) +
-  geom_bar() + 
-  coord_flip() +
-  theme(text = element_text(size = 6)))
 
-aisle_bottom = (instacart %>%
-  tail(67) %>%
-  ggplot(aes(x = aisle)) +
-  geom_bar() + 
+aisle_top = (instacart_aisles %>%
+  head(67) %>%
+  ggplot(aes(x = aisle, y = n_items)) +
+  geom_point() +
   coord_flip() +
-  theme(text = element_text(size = 6)))
+  theme(text = element_text(size = 5)))
+
+aisle_bottom = (instacart_aisles %>%
+  tail(67) %>%
+  ggplot(aes(x = aisle, y = n_items)) +
+  geom_point() +
+  coord_flip() +
+  theme(text = element_text(size = 5)))
 
 aisle_top + aisle_bottom
 
 ```
 
+The plot above shows the number of items bought from each aisle. It accurately reflects that the top three aisles from which items are ordered are "fresh vegetables", "fresh fruits", and "packaged vegetables fruits". The plot was split into two to make it more readable. 
+
+
 Table of most popular items in “baking ingredients”, “dog food care”, and “packaged vegetables fruits”:
-```{r}
+```{r message = FALSE}
 instacart %>%
   filter(aisle == c("baking ingredients", "dog food care", "packaged vegetables fruits")) %>% 
   group_by(aisle, product_name) %>%
@@ -153,8 +166,9 @@ instacart %>%
   rename(most_popular_item = product_name) %>%
   knitr::kable()
   
-
 ```
+
+The table above shows the most popular item bought in the aisles specified. 
 
 
 Table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week:
@@ -172,7 +186,7 @@ instacart %>%
 
 ```
 
-Because no other information was given, it was assumed that "0" = Sunday, "1" = Monday, ..., "6" = Saturday.
+Because no other information was given, it was assumed that "0" = Sunday, "1" = Monday, ..., "6" = Saturday. The hour variable was converted to reflect the time in digital format. Coffee ice cream was generally ordered in the afternoon (except on Fridays), and Pink lady apples were generally ordered around midday (except on Wednesdays and Fridays).
 
 
 
@@ -199,7 +213,7 @@ ny_noaa_df = as.tibble(ny_noaa %>%
 
 ```
 
-Precipitation was in (tenths of mm), so it was divided by 10 to make the units (mm). Tmax and tmin were coerced into integer variables and also divided by 10 to make the units (degrees C) instead of (tenths of degrees C).
+Precipitation was in (tenths of mm), so it was divided by 10 to make the units (mm). Tmax and tmin were coerced into integer variables and also divided by 10 to make the units (degrees C) instead of (tenths of degrees C). The mosted observed values for snow were zero and NA. This makes sense because it does not snow for most days, and missing values were a common issue in the data set.
 
 
 Two panel plot of average max temperatures in January and July:
@@ -221,22 +235,29 @@ ny_noaa_df %>%
     )
 ```
 
+The mean maximum temperature was distributed around 0 degrees C for January and just under 30 degrees C for July. This accurately reflects changes in temperature for the different seasons. In January, we can see that max temperature gradually increases as year increases, but there is a drastic drop in 1994 and 2004. The max temp is generally static across years in July.
+
 
 Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year
 
-```{r}
+```{r warning = FALSE}
 
 tmax_tmin_plot = ny_noaa_df %>%
   ggplot(aes(x = tmax, y = tmin)) +
-  geom_hex() 
+  geom_hex() +
+  labs(x = "Max temp (degrees C)",
+       y = "Min temp(degrees C)") +
+  theme(legend.direction = "vertical")
 
 
 snow_plot = ny_noaa_df %>%
   filter(snow > 0 & snow < 100) %>% 
-  group_by(year) %>%
-  ggplot(aes(x = snow, fill = year)) +
-  geom_density()
+  ggplot(aes(x = snow, group = year, fill = year)) +
+  geom_density(alpha = 0.5) +     
+  viridis::scale_fill_viridis() +
+  labs(x = "Snow (mm)")
 
 (tmax_tmin_plot + snow_plot)
 ```
 
+From the plot on the left, we can see that most stations report minimum temperatures from -15 to 15 degrees C and max temperatures from 10 to 30 degrees C. The data is slightly bimodal at the ends of those ranges. The plot on the right indicates that snowfall has decreased as the years increase, but generally follow the same density distribution.
