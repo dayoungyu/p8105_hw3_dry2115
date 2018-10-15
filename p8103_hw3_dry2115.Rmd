@@ -98,7 +98,7 @@ brfss_df %>%
   theme(axis.text.x = element_text(angle = 45)) +
   labs(
       x = "Year",
-      y = "Mean Proportion of Response"
+      y = "Mean proportion of response"
     )
 
 ```
@@ -143,10 +143,21 @@ instacart %>%
 ```
 
 
-## Problem 3
-
+Table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week:
 ```{r}
+instacart %>%
+  filter(product_name == c("Pink Lady Apples", "Coffee Ice Cream")) %>% 
+  group_by(product_name, order_dow) %>%
+  summarize(mean_hour = mean(order_hour_of_day)) %>%
+  mutate(mean_hour = paste(floor(mean_hour), 
+                    sprintf("%02.0f",(round((mean_hour - floor(mean_hour))*60))), 
+                    sep = ":")) %>%
+  spread(key = order_dow, value = mean_hour) %>%
+  rename(Sun = '0', Mon = '1', Tues = '2', Wed = '3', Thur = '4', Fri = '5', Sat = '6') %>%
+  knitr::kable()
 
 
 ```
 
+
+## Problem 3
